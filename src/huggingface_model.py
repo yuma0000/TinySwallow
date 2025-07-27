@@ -1,7 +1,7 @@
 import json
 from safetensors.torch import load_file
 
-class huggingface_model:
+class Huggingface_model:
 
     def load_config(self, path: str) -> None:
         with open(path, "r", encoding = "utf-8") as f:
@@ -18,6 +18,8 @@ class huggingface_model:
         self.state_dict = load_file(path)
 
     def __init__(self, path: str):
+        self.path = path
+
         self.config_data = {
             "_name_or_path": None,
             "architectures": None,
@@ -43,6 +45,11 @@ class huggingface_model:
             "use_cache": None,
             "use_sliding_window": None,
             "vocab_size": None
+        }
+
+        self.files = {
+            "vocab": "vocab.json",
+            "merges": "merges.txt"
         }
 
         self.state_dict = None
