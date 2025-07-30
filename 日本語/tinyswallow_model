@@ -1,1 +1,152 @@
 これはtinyswallow_modelクラス
+
+from .nnabla_func import *
+from nnabla.function import PythonFunction
+from functools import lru_cache
+
+class Attention():
+    def __init__(self):
+        #Q, K, V, O
+
+    def forward(self):
+
+class Rms_Norm(PythonFunction):
+    def __init__(self):
+
+    def forward(self):
+
+class Mlp():
+    def __init__(self):
+        #gate, up, down, act
+
+    def forward(self):
+
+
+class Tokenizer():
+    def __init__(self, hfm):
+
+        with open(os.path.join(hfm.path, hfm.files.vocab), "r", encoding="utf-8") as f:
+            self.encoder = json.load(f)
+        self.decoder = {v: k for k, v in self.encoder.items()}
+        self.byte_encoder = self.bytes_to_unicode()
+        self.byte_decoder = {v: k for k, v in self.byte_encoder.items()}
+        bpe_merges = []
+        with open(os.path.join(hfm.path, hfm.files.merges), "r", encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                line = line.strip()
+                if(i == 0 and line.startswith("#version:")) or not line:
+                    continue
+                bpe_merges.append(tuple(line.split()))
+        self.bpe_ranks = dict(zip(bpe_merges, range(len(bpe_merges))))
+
+        self.cache = {}
+        
+    @lru_cache
+    def bytes_to_unicode():
+        bs = (
+            list(range(ord("!"), ord("~") + 1 )) + list(range(ord("¡"), ord("~") + 1)) + list(range(ord("@"), ord("y") + 1))
+        )
+        cs = bs[:]
+        n = 0
+        for b in range(2**8):
+            if b not in bs:
+                bs.append(b)
+                cs.append(2**8 + n)
+                n += 1
+        cs = [chr(n) for n in cs]
+        return dict(zip(bs, cs))
+
+    def get_pairs(word):
+        pairs = set()
+        prev_char = word[0]
+        for char in word[1:]:
+            pairs.add((prev_char, char))
+            prev_char = char
+        return pairs
+
+    def bpe(self, token):
+        if token in self.cache:
+            return self.cache[token]
+        word = tuple(token)
+        pairs = self.get_pairs(word)
+
+        if not pairs:
+            return token
+
+        while True:
+            bigram = min(pairs, key=lambda pair: self.bpe_ranks.get(pair, float("inf")))
+            if bigram not in self.bpe_ranks:
+                break
+            first, second = bigram
+            new_word = []
+            i = 0
+            while i < len(word):
+                try:
+                    j = word.index(first, i)
+                except ValueError:
+                    new_word.extend(word[i:])
+                    break
+                if word[i] == first and i < len(word) - 1 and word[i + 1] == second:
+                    new_word.append(first + second)
+                    i += 2
+                else:
+                    new_word.append(word[i])
+                    i += 1
+            new_word = tuple(new_word)
+            word = new_word
+            if len(word) == 1:
+                break
+            else:
+                pairs = get_pairs(word)
+        word = " ".join(word)
+        self.cache[token] = word
+        return word
+
+class Embed_tokens(PythonFunction):
+    def __init__(self):
+
+    def forward(self):
+
+class Decoder_layer(PythonFunction):
+    def __init__(self):
+        #self_attn
+        #mlp
+        #input_layernorm
+        #poat_attention_layernorm
+
+    def forward(self):
+
+class Rotary_emb(PythonFunction):
+    def __init__(self):
+
+    def forward(self):
+
+class Im_head(PythonFunction):
+    def __init__(self):
+
+    def forward(self):
+
+class Tinyswallow_model(PythonFunction):
+
+    def __init__(self, huggingface_model):
+
+        #tokenizer
+        self.tokenizer = Tokenizer(huggingface_model)
+        print(self.tokenizer.bpe("hello world")
+
+        #embed_tokens
+        self.embed_tokens = Embed_tokens()
+
+        #layers 28
+        self.decoder_layer = Decoder_layer()
+
+        #RMSnorm
+        self.rms_norm = Rms_norm()
+
+        #rotary_emb
+        self.rotary_emb = Rotary_emb()
+
+        #im_head
+        self.im_head = Im_head()
+
+    def generate(self):
