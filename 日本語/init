@@ -1,6 +1,8 @@
 プロジェクト名「TinySwallowの改良かつ学習データとして独自モデルを開発」
+説明「TinySwallowモデルを学習データとし自身の独自モデルへの開発を行う」
 プログラミング言語「python3」
 バージョン1.0.0
+以下はinitファイルであり他のファイルも読み込み、コードの生成をし、より詳しく書いたファイルも作成してもらい、自身のコードの改善点を学ぶ
 
 モジュールはnnablaとローカルのファイルにos,json,timeなど元から使えるものを活用する
 
@@ -9,6 +11,7 @@ import nnabla.function as F
 from nnabla.function import PythonFunction
 import "huggingface_model"
 import "tinyswallow_model"
+import "config"
 
 メイン関数の作成
   [モデルのディレクトリー]変数を作成し、ここは後で代入する
