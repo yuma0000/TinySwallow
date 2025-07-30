@@ -1,0 +1,22 @@
+プロジェクト名「TinySwallowの改良かつ学習データとして独自モデルを開発」
+プログラミング言語「python3」
+バージョン1.0.0
+
+モジュールはnnablaとローカルのファイルにos,json,timeなど元から使えるものを活用する
+
+import nnabla as nn
+import nnabla.function as F
+from nnabla.function import PythonFunction
+import "huggingface_model"
+import "tinyswallow_model"
+
+メイン関数の作成
+  [モデルのディレクトリー]変数を作成し、ここは後で代入する
+  [コンフィグのディレクトリー]変数を作成し、ここも後で代入する
+  [hfm]変数で[huggingface_model]クラスに[モデルのディレクトリー]を引数に代入する
+  [tsm]変数で[tinyswallow_model]クラスに[hfm]を引数に代入する
+  [tsm.config]に対して[config]クラスに[コンフィグのディレクトリー]を引数に代入する
+
+  [tsm.generate]で引数に[プロンプト]と[最大文字数]を代入する
+
+  実行したことを確認するためプリントで[start...\n]などを表示させる
