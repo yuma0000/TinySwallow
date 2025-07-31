@@ -1,5 +1,6 @@
 これはtinyswallow_modelクラス
 
+#以下にローカルファイルとモジュールを読み込む
 from .nnabla_func import *
 from nnabla.function import PythonFunction
 from functools import lru_cache
@@ -130,14 +131,15 @@ class Tinyswallow_model(PythonFunction):
 
     def __init__(self, huggingface_model):
 
-        #tokenizer
+        #tokenizerでトークンをIDにする
         self.tokenizer = Tokenizer(huggingface_model)
+        #ここでは試しに動作するのを確認する
         print(self.tokenizer.bpe("hello world")
 
-        #embed_tokens
+        #embed_tokensでIDからベクトルにする
         self.embed_tokens = Embed_tokens()
 
-        #layers 28
+        #layers 28層のデコーダ
         self.decoder_layer = Decoder_layer()
 
         #RMSnorm
