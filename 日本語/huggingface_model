@@ -7,10 +7,12 @@ from safetensors.torch import load_file
 
 class Huggingface_model:
 
+    #[config_data]変数にファイルの内容を上書きする
     def load_config(self, path: str) -> None:
         with open(path, "r", encoding = "utf-8") as f:
             self.config_data.update(json.load(f))
 
+    #確認だが上記のNoneが無いことに確認をする
     def check(self) -> bool:
         for key, value in self.config_data.items():
             if value is None:
@@ -18,9 +20,11 @@ class Huggingface_model:
                 return False
         return True
 
+    #safetensorsから[load_file]を使い代入する
     def model_structure(self, path: str) -> None:
         self.state_dict = load_file(path)
 
+    #メインで初期化処理をする
     def __init__(self, path: str):
         self.path = path
 
@@ -64,6 +68,7 @@ class Huggingface_model:
         #checkを行う
         che = self.check()
 
+        #確認次第で実行する
         if che is True:
             #構造と重みの読み込みをする
             self.model_structure(path)
