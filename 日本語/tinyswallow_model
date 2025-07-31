@@ -139,14 +139,14 @@ class Tinyswallow_model(PythonFunction):
         #embed_tokensでIDからベクトルにする
         self.embed_tokens = Embed_tokens()
 
+        #rotary_embで位置情報を入れる
+        self.rotary_emb = Rotary_emb()
+
         #layers 28層のデコーダ
         self.decoder_layer = Decoder_layer()
 
         #RMSnorm
         self.rms_norm = Rms_norm()
-
-        #rotary_emb
-        self.rotary_emb = Rotary_emb()
 
         #im_head
         self.im_head = Im_head()
