@@ -1,1 +1,15 @@
 これはcacheクラス
+
+#以下は取り敢えずこうする
+class cache:
+   #初期化処理でフォルダー指定をする
+   def __init__(path: str):
+
+   #データを探す
+   def search():
+
+   #データを検索し習得する
+   def get():
+
+   #データを検索し保存する
+   def save():
