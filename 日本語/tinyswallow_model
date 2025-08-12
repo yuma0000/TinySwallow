@@ -98,8 +98,9 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
 
 class Rms_Norm(PythonFunction):
     def __init__(self):
-    #weightは重み
-    #variance_epsilonはバランス
+        #weightは重み
+        #variance_epsilonはバランス
+        super(Rms_Norm, self) __init__(self)
 
     def forward(self):
         input_dtype = hidden_states.dtype #入力
