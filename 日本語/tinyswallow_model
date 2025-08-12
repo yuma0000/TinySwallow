@@ -5,11 +5,11 @@ from .nnabla_func import *
 from nnabla.function import PythonFunction
 from functools import lru_cache
 
-class Attention():
+class Attention(PythonFunction):
     def __init__(self):
         #Q, K, V, O
 
-    def forward(self, query_states, key_states, value_states, cos, sin):  
+    def forward_impl(self, query_states, key_states, value_states, cos, sin):  
         query_states, key_states, value_states (1, 2)を入れ替える
 
         cos, sin = position_embeddings  
@@ -100,7 +100,7 @@ class Rms_Norm(PythonFunction):
     def __init__(self):
         #weightは重み
         #variance_epsilonはバランス
-        super(Rms_Norm, self)__init__(self)
+        super(Rms_Norm, self) __init__(self)
 
     def forward_impl(self):
         input_dtype = hidden_states.dtype #入力
@@ -108,7 +108,7 @@ class Rms_Norm(PythonFunction):
         hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
         return self.weight * hidden_states.to(input_dtype)
 
-class Mlp():
+class Mlp(PythonFunction):
     def __init__(self):
         #gate, up, down, act
 
@@ -134,7 +134,10 @@ class Tokenizer():
         self.bpe_ranks = dict(zip(bpe_merges, range(len(bpe_merges))))
 
         self.cache = {}
-        
+
+    def __call__():
+        return self.bpe
+
     @lru_cache
     def bytes_to_unicode():
         bs = (
@@ -199,10 +202,12 @@ class Tokenizer():
 class Embed_tokens(PythonFunction):
     def __init__(self):
        #embedding
+       #F embed()
 
     def forward(self):
 
 class Decoder_layer(PythonFunction):
+    #transformersのデコーダー
     def __init__(self):
         #self_attn
         #mlp
@@ -278,4 +283,4 @@ class Tinyswallow_model(PythonFunction):
         self.im_head = Im_head()
 
     def generate(self):
-         selftotokenizer = selftokenizer("トークン")
+         self totokenizer = self tokenizer("トークン")
