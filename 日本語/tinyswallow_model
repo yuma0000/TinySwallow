@@ -97,10 +97,10 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
     return q_embed, k_embed
 
 class Rms_Norm(PythonFunction):
-    def __init__(self):
+    def __init__(self, ctx):
         #weightは重み
         #variance_epsilonはバランス
-        super(Rms_Norm, self) __init__(self)
+        super(Rms_Norm, self).__init__(ctx)
 
     def forward_impl(self):
         input_dtype = hidden_states.dtype #入力
@@ -283,4 +283,10 @@ class Tinyswallow_model(PythonFunction):
         self.im_head = Im_head()
 
     def generate(self):
-         self totokenizer = self tokenizer("トークン")
+         self.totokenizer = self.tokenizer("トークン")
+         self.toembed_tokens = self.embed_tokens(self.totokenizer)
+         self.torotary_emb = self.rotary_emb(self.toembed_tokens)
+         for i in self.layer_count:
+             self.todecoder_layer = self.decoder_layer(i, self.todecoder_layer)
+         self.torms_norm = self.rms_norm(self.todecoder_layer)
+         self.toim_head = self.im_head(self.torms_norm)
