@@ -100,9 +100,9 @@ class Rms_Norm(PythonFunction):
     def __init__(self):
         #weightは重み
         #variance_epsilonはバランス
-        super(Rms_Norm, self) __init__(self)
+        super(Rms_Norm, self)__init__(self)
 
-    def forward(self):
+    def forward_impl(self):
         input_dtype = hidden_states.dtype #入力
         variance = hidden_states.pow(2).mean(-1, keepdim=True)
         hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
@@ -278,3 +278,4 @@ class Tinyswallow_model(PythonFunction):
         self.im_head = Im_head()
 
     def generate(self):
+         selftotokenizer = selftokenizer("トークン")
