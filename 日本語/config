@@ -1,1 +1,4 @@
 これはconfigクラス
+
+class config:
+    def __init__(self, dir):
