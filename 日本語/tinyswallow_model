@@ -1,8 +1,7 @@
 これはtinyswallow_modelクラス
 
 #以下にローカルファイルとモジュールを読み込む
-from .nnabla_func import *
-from nnabla.function import PythonFunction
+import .nnabla_func
 from functools import lru_cache
 
 class Attention(PythonFunction):
