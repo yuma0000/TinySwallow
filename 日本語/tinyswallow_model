@@ -26,7 +26,9 @@ class Tokenizer():
         self.cache = {}
 
     def __call__(self, text):
-        return self.bpe(text)
+        bpe_tokens = self.bpe(text).split(" ")
+        token_ids = [self.encoder[token] for token in bpe_tokens if token in self.encoder]
+        return token_ids
 
     @lru_cache
     def bytes_to_unicode(self):
