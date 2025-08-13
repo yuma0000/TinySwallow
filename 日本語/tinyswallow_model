@@ -119,11 +119,17 @@ class Tinyswallow_model(PythonFunction):
         self.im_head = nf.Im_head()
 
     def generate(self):
-         self.totokenizer = self.tokenizer("トークン")
-         self.toembed_tokens = self.embed_tokens(self.totokenizer)
-         self.torotary_emb = self.rotary_emb(self.toembed_tokens)
-         self.todecoder_layer = self.torotary_emb
+         x = self.tokenizer("トークン")
+         x = self.embed_tokens(x)
+         x = self.rotary_emb(x)
+
          for i in range(self.layer_count):
-             self.todecoder_layer = self.decoder_layer(i, self.todecoder_layer)
-         self.torms_norm = self.rms_norm(self.todecoder_layer)
-         self.toim_head = self.im_head(self.torms_norm)
+             x = self.decoder_layer(i, x)
+         x = self.rms_norm(x)
+         logits = self.im_head(x)
+
+         next_token_id = int(logits[-1].argmax())
+         token_ids.append(next_token_id)
+         tokens = [self.tokenizer.decoder[t] for t in token_ids]
+         text_out = "".join(tokens)
+         return text_out
