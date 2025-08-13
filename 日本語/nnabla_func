@@ -1,6 +1,7 @@
 これはnnabla_funcクラスです
 import nnabla as nn
 import nnabla.function as F
+from nnabla.function import PythonFunction
 
 class Attention(PythonFunction):
     def __init__(self):
