@@ -84,7 +84,7 @@ class Tokenizer():
             if len(word) == 1:
                 break
             else:
-                pairs = get_pairs(word)
+                pairs = self.get_pairs(word)
         word = " ".join(word)
         self.cache[token] = word
         return word
