@@ -1,6 +1,8 @@
 これはtinyswallow_modelクラス
 
 #以下にローカルファイルとモジュールを読み込む
+import os
+import json
 import .nnabla_func as nf
 from functools import lru_cache
 
@@ -23,11 +25,11 @@ class Tokenizer():
 
         self.cache = {}
 
-    def __call__():
+    def __call__(self):
         return self.bpe
 
     @lru_cache
-    def bytes_to_unicode():
+    def bytes_to_unicode(self):
         bs = (
             list(range(ord("!"), ord("~") + 1 )) + list(range(ord("¡"), ord("~") + 1)) + list(range(ord("@"), ord("y") + 1))
         )
@@ -41,7 +43,7 @@ class Tokenizer():
         cs = [chr(n) for n in cs]
         return dict(zip(bs, cs))
 
-    def get_pairs(word):
+    def get_pairs(self, word):
         pairs = set()
         prev_char = word[0]
         for char in word[1:]:
@@ -104,7 +106,7 @@ class Tinyswallow_model(PythonFunction):
         #tokenizerでトークンをIDにする
         self.tokenizer = Tokenizer(huggingface_model)
         #ここでは試しに動作するのを確認する
-        print(self.tokenizer.bpe("hello world")
+        print(self.tokenizer.bpe("hello world"))
 
         #embed_tokensでIDからベクトルにする
         self.embed_tokens = nf.Embed_tokens()
@@ -125,7 +127,8 @@ class Tinyswallow_model(PythonFunction):
          self.totokenizer = self.tokenizer("トークン")
          self.toembed_tokens = self.embed_tokens(self.totokenizer)
          self.torotary_emb = self.rotary_emb(self.toembed_tokens)
-         for i in self.layer_count:
+         self.todecoder_layer = self.torotary_emb
+         for i in range(self.layer_count):
              self.todecoder_layer = self.decoder_layer(i, self.todecoder_layer)
          self.torms_norm = self.rms_norm(self.todecoder_layer)
          self.toim_head = self.im_head(self.torms_norm)
