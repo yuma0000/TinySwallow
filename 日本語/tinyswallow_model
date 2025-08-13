@@ -3,7 +3,7 @@
 #以下にローカルファイルとモジュールを読み込む
 import os
 import json
-import .nnabla_func as nf
+import nnabla_func as nf
 from functools import lru_cache
 
 class Tokenizer():
@@ -25,8 +25,8 @@ class Tokenizer():
 
         self.cache = {}
 
-    def __call__(self):
-        return self.bpe
+    def __call__(self, text):
+        return self.bpe(text)
 
     @lru_cache
     def bytes_to_unicode(self):
@@ -88,13 +88,6 @@ class Tokenizer():
         word = " ".join(word)
         self.cache[token] = word
         return word
-
-class Embed_tokens(PythonFunction):
-    def __init__(self):
-       #embedding
-       #F embed()
-
-    def forward(self):
 
 class Tinyswallow_model(PythonFunction):
 
