@@ -1,1 +1,166 @@
 これはnnabla_funcクラスです
+import nnabla as nn
+import nnabla.function as F
+
+class Attention(PythonFunction):
+    def __init__(self):
+        #Q, K, V, O
+
+    def forward_impl(self, query_states, key_states, value_states, cos, sin):  
+        query_states, key_states, value_states (1, 2)を入れ替える
+
+        cos, sin = position_embeddings  
+        query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)  
+
+       if past_key_value is not None:  
+            cache_kwargs = {"sin": sin, "cos": cos, "cache_position": cache_position}  
+            key_states, value_states = past_key_value.update(key_states, value_states, self.layer_idx, cache_kwargs)  
+
+        if hasattr(module, "num_key_value_groups"):  
+            key = repeat_kv(key, module.num_key_value_groups)  
+            value = repeat_kv(value, module.num_key_value_groups)  
+
+        if attention_mask is not None and attention_mask.ndim == 4:  
+            attention_mask = attention_mask[:, :, :, : key.shape[-2]]  
+
+        query = query.contiguous()  
+        key = key.contiguous()  
+        value = value.contiguous()  
+
+        if is_causal is None:  
+            is_causal = query.shape[2] > 1 and attention_mask is None and getattr(module, "is_causal", True)  
+
+        if torch.jit.is_tracing() and isinstance(is_causal, torch.Tensor):  
+            is_causal = is_causal.item()  
+
+        origin_dtype = query.dtype  
+        def maybe_upcast(t):  
+            return t.float() if t.dtype in (torch.float16, torch.bfloat16) else t  
+
+        query = maybe_upcast(query)  
+        key = maybe_upcast(key)  
+        value = maybe_upcast(value)  
+
+        if query.size(1) != key.size(1):  
+            qh, kh = query.size(1), key.size(1)  
+            assert qh % kh == 0, "GQA: query_heads must be divisible by key_heads"  
+            repeat_factor = qh // kh  
+            key = key.repeat_interleave(repeat_factor, dim=1)  
+            value = value.repeat_interleave(repeat_factor, dim=1)  
+
+        if scale is None:  
+            scale = 1.0 / (key.size(-1) ** 0.5)  
+
+        attn_weights = torch.matmul(query, key.transpose(-2, -1)) * scale  
+
+        if is_causal:  
+            q_len, k_len = attn_weights.size(-2), attn_weights.size(-1)  
+            causal_mask = torch.tril(torch.ones(q_len, k_len, device=attn_weights.device, dtype=torch.bool))  
+            attn_weights = attn_weights.masked_fill(~causal_mask.view(1, 1, q_len, k_len), float('-inf'))  
+
+        if attn_mask is not None:  
+            if attn_mask.dtype == torch.bool:  
+                attn_weights = attn_weights.masked_fill(~attn_mask, float('-inf'))  
+            else:  
+                attn_weights = attn_weights + attn_mask  
+
+        attn_probs = safe_softmax(attn_weights, dim=-1)  
+
+        if dropout_p > 0.0 and torch.is_grad_enabled():  
+            attn_probs = dropout(attn_probs, p=dropout_p, training=True)  
+
+        out = torch.matmul(attn_probs, value)  
+
+        attn_output = out.to(origin_dtype)  
+
+        attn_weights = None  
+
+        attn_output = attn_output.transpose(1, 2).contiguous()  
+
+        attn_output = attn_output.reshape(*input_shape, -1).contiguous()  
+        attn_output = self.o_proj(attn_output)  
+        return attn_output, attn_weights
+
+def rotate_half(x):
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
+    cos = cos.unsqueeze(unsqueeze_dim)
+    sin = sin.unsqueeze(unsqueeze_dim)
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+    k_embed = (k * cos) + (rotate_half(k) * sin)
+    return q_embed, k_embed
+
+class Rms_Norm(PythonFunction):
+    def __init__(self, ctx):
+        #weightは重み
+        #variance_epsilonはバランス
+        super(Rms_Norm, self).__init__(ctx)
+
+    def forward_impl(self):
+        input_dtype = hidden_states.dtype #入力
+        variance = hidden_states.pow(2).mean(-1, keepdim=True)
+        hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
+        return self.weight * hidden_states.to(input_dtype)
+
+class Mlp(PythonFunction):
+    def __init__(self):
+        #gate, up, down, act
+
+    def forward(self):
+        down_proj = self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
+        return down_proj
+
+class Decoder_layer(PythonFunction):
+    #transformersのデコーダー
+    def __init__(self):
+        #self_attn
+        #mlp
+        #input_layernorm
+        #poat_attention_layernorm
+
+    def forward(self):
+        residual = hidden_states
+        hidden_states = self.input_layernorm(hidden_states)
+        hidden_states, _ = self.self_attn(
+            hidden_states=hidden_states,
+            attention_mask=attention_mask,
+            position_ids=position_ids,
+            past_key_value=past_key_value,
+            use_cache=use_cache,
+            cache_position=cache_position,
+            position_embeddings=position_embeddings,
+            **kwargs,
+        )
+        hidden_states = residual + hidden_states
+
+        residual = hidden_states
+        hidden_states = self.post_attention_layernorm(hidden_states)
+        hidden_states = self.mlp(hidden_states)
+        hidden_states = residual + hidden_states
+        return hidden_states
+
+class Rotary_emb(PythonFunction):
+    def __init__(self):
+        inv_freq_expanded = self.inv_freq[None, :, None].float().expand(position_ids.shape[0], -1, 1).to(x.device)
+        position_ids_expanded = position_ids[:, None, :].float()
+
+        device_type = x.device.type if isinstance(x.device.type, str) and x.device.type != "mps" else "cpu"
+        with torch.autocast(device_type=device_type, enabled=False):
+            freqs = (inv_freq_expanded.float() @ position_ids_expanded.float()).transpose(1, 2)
+            emb = torch.cat((freqs, freqs), dim=-1)
+            cos = emb.cos() * self.attention_scaling
+            sin = emb.sin() * self.attention_scaling
+
+        self.cos = cos.to(dtype=x.dtype)
+        self.sin = sin.to(dtype=x.dtype)
+
+    def forward(self, q, k, v):
+        apply_rotary_pos_emb(q, k, v, cos, sin)
+
+class Im_head(PythonFunction):
+    def __init__(self):
+        #linear
+    def forward(self, x):
