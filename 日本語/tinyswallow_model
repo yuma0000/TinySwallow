@@ -8,7 +8,6 @@ from functools import lru_cache
 
 class Tokenizer():
     def __init__(self, hfm):
-
         with open(os.path.join(hfm.path, hfm.files.vocab), "r", encoding="utf-8") as f:
             self.encoder = json.load(f)
         self.decoder = {v: k for k, v in self.encoder.items()}
@@ -118,8 +117,8 @@ class Tinyswallow_model(PythonFunction):
         #im_head
         self.im_head = nf.Im_head()
 
-    def generate(self):
-        token_ids = self.tokenizer("トークン")
+    def generate(self, text):
+        token_ids = self.tokenizer(text)
 
         while len(token_ids) < max_length:
             x = self.embed_tokens(token_ids)
