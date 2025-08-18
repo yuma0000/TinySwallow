@@ -97,6 +97,9 @@ class Tinyswallow_model(PythonFunction):
         self.config = None
         self.layer_count = huggingface_model.config_data.max_layer
 
+        self.bos_token = self.tokenizer.encoder.get("<BOS>")
+        self.eos_token = self.tokenizer.encoder.get("<EOS>")
+
         #tokenizerでトークンをIDにする
         self.tokenizer = Tokenizer(huggingface_model)
         #ここでは試しに動作するのを確認する
@@ -129,7 +132,7 @@ class Tinyswallow_model(PythonFunction):
 
     def generate(self, max_length: int = 1):
         for _ in range(max_length):
-            x = self.tokenizer.encoder.get("<BOS>")
+            x = self.bos_token
             for i in range(self.layer_count):
                 x = self.decoder_layer(i, x)
             x = self.rms_norm(x)
@@ -138,7 +141,7 @@ class Tinyswallow_model(PythonFunction):
             next_token_id = int(logits[0].argmax())
             token_ids.append(next_token_id)
 
-            if next_token_id in (self.tokenizer.encoder.get("<EOS>")):
+            if next_token_id in (self.eos_token):
                 break
         tokens = [self.tokenizer.decoder[t] for t in token_ids]
         text_out = "".join(tokens)
