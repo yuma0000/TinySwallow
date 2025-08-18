@@ -132,7 +132,7 @@ class Tinyswallow_model(PythonFunction):
 
     def generate(self, max_length: int = 1):
         for _ in range(max_length):
-            x = self.bos_token
+            
             for i in range(self.layer_count):
                 x = self.decoder_layer(i, x)
             x = self.rms_norm(x)
