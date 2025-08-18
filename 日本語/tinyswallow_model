@@ -117,19 +117,26 @@ class Tinyswallow_model(PythonFunction):
         #im_head
         self.im_head = nf.Im_head()
 
-    def generate(self, text):
+    def add_text(self, text):
         token_ids = self.tokenizer(text)
+        x = self.embed_tokens(token_ids)
+        x = self.rotary_emb(x)
+        self.decoder_layer.generate_kv(x)
 
-        while len(token_ids) < max_length:
-            x = self.embed_tokens(token_ids)
+    def remove_text(self, c: int = 1):
+        token_ids = token_ids[:-c]
+        self.decoder_layer.remove_kv(c)
+
+    def generate(self, max_length: int = 1):
+        for _ in range(max_length):
+            x = self.embed_tokens(self.token_ids[-1])
             x = self.rotary_emb(x)
-
             for i in range(self.layer_count):
                 x = self.decoder_layer(i, x)
             x = self.rms_norm(x)
             logits = self.im_head(x)
 
-            next_token_id = int(logits[-1].argmax())
+            next_token_id = int(logits[0].argmax())
             token_ids.append(next_token_id)
 
             if next_token_id in (self.tokenizer.encoder.get("<EOS>")):
