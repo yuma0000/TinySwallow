@@ -131,18 +131,20 @@ class Tinyswallow_model(PythonFunction):
         self.decoder_layer.remove_kv(c)
 
     def generate(self, max_length: int = 1):
-        x = self.embed_tokens(bos_token)
-        x = self.rotary_emb(x)
+        x = bos_token
         for _ in range(max_length):
+            x = self.embed_tokens(x)
+            x = self.rotary_emb(x)
             for i in range(self.layer_count):
                 x = self.decoder_layer(i, x)
             x = self.rms_norm(x)
-            x = self.im_head(x)
+            logits = self.im_head(x)
 
-            x = int(x[0].argmax())
-            token_ids.append(x)
+            last_token = int(logits[0].argmax())
+            token_ids.append(last_token)
+            x = last_token
 
-            if x in (self.eos_token):
+            if last_token in (self.eos_token):
                 break
         tokens = [self.tokenizer.decoder[t] for t in token_ids]
         text_out = "".join(tokens)
