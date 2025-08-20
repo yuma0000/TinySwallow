@@ -144,13 +144,13 @@ class Tinyswallow_model(PythonFunction):
             x = self.rms_norm(x)
             logits = self.im_head(x)
 
+            if last_token == self.eos_token: #<eos>なら終了する
+                break
+
             last_token = int(logits[0].argmax()) #複数から一番確率が高いのを選択する
             token_ids.append(last_token) #トークンの追加
             x = [last_token] #次のトークンとして使う
 
-            if last_token == self.eos_token: #<eos>なら終了する
-                self.add_text(self.eos_token)
-                break
         tokens = [self.tokenizer.decoder[t] for t in token_ids]
         text_out = "".join(tokens)
         return text_out
