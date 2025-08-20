@@ -131,7 +131,7 @@ class Tinyswallow_model(PythonFunction):
         self.decoder_layer.remove_kv(c)
 
     def generate(self, max_length: int = 1):
-        tokens = [self.bos_token] #配列に入れて<BOS>に続ける
+        tokens_ids = [self.bos_token] #配列に入れて<BOS>に続ける
         x = [self.bos_token] #配列に入れて<BOS>から生成する
         for _ in range(max_length):
             x = self.embed_tokens(x) #トークンの次元生成
@@ -141,11 +141,12 @@ class Tinyswallow_model(PythonFunction):
 
             for i in range(self.layer_count): #繰り返してデコードする
                 x = self.decoder_layer(i, x)
-            x = self.rms_norm(x)
-            logits = self.im_head(x)
 
             if last_token == self.eos_token: #<eos>なら終了する
                 break
+
+            x = self.rms_norm(x)
+            logits = self.im_head(x)
 
             last_token = int(logits[0].argmax()) #複数から一番確率が高いのを選択する
             token_ids.append(last_token) #トークンの追加
