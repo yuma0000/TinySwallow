@@ -131,21 +131,25 @@ class Tinyswallow_model(PythonFunction):
         self.decoder_layer.remove_kv(c)
 
     def generate(self, max_length: int = 1):
-        tokens = [self.bos_token]
-        x = [self.bos_token]
+        tokens = [self.bos_token] #配列に入れて<BOS>に続ける
+        x = [self.bos_token] #配列に入れて<BOS>から生成する
         for _ in range(max_length):
-            x = self.embed_tokens(x)
-            x = self.rotary_emb(x)
-            for i in range(self.layer_count):
+            x = self.embed_tokens(x) #トークンの次元生成
+            x = self.rotary_emb(x) #rotary_embの埋め込み
+
+            #ここで配列に<BOS>だけのrotary_embの埋め込みが出来る
+
+            for i in range(self.layer_count): #繰り返してデコードする
                 x = self.decoder_layer(i, x)
             x = self.rms_norm(x)
             logits = self.im_head(x)
 
-            last_token = int(logits[0].argmax())
-            token_ids.append(last_token)
-            x = [last_token]
+            last_token = int(logits[0].argmax()) #複数から一番確率が高いのを選択する
+            token_ids.append(last_token) #トークンの追加
+            x = [last_token] #次のトークンとして使う
 
-            if last_token in (self.eos_token):
+            if last_token == self.eos_token: #<eos>なら終了する
+                self.add_text(self.eos_token)
                 break
         tokens = [self.tokenizer.decoder[t] for t in token_ids]
         text_out = "".join(tokens)
