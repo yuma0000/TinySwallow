@@ -93,6 +93,7 @@ class Tokenizer():
 class Tinyswallow_model(PythonFunction):
 
     def __init__(self, huggingface_model):
+        self.all_token_ids = []
 
         self.config = None
         self.layer_count = huggingface_model.config_data.max_layer
@@ -122,12 +123,13 @@ class Tinyswallow_model(PythonFunction):
 
     def add_text(self, text):
         token_ids = self.tokenizer(text)
+        self.all_token_ids append(token_ids)
         x = self.embed_tokens(token_ids)
         x = self.rotary_emb(x)
         self.decoder_layer.generate_kv(x)
 
     def remove_text(self, c: int = 1):
-        token_ids = token_ids[:-c]
+        self.all_token_ids = self.all_token_ids[:-c]
         self.decoder_layer.remove_kv(c)
 
     def generate(self, max_length: int = 1):
@@ -152,6 +154,7 @@ class Tinyswallow_model(PythonFunction):
             token_ids.append(last_token) #トークンの追加
             x = [last_token] #次のトークンとして使う
 
+        self.all_token_ids.append(token_ids)
         tokens = [self.tokenizer.decoder[t] for t in token_ids]
         text_out = "".join(tokens)
         return text_out
