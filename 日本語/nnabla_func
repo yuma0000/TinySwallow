@@ -4,8 +4,11 @@ import nnabla.function as F
 from nnabla.function import PythonFunction
 
 class Attention(PythonFunction):
-    def __init__(self):
+    def __init__(self, state_dict):
         #Q, K, V, O
+        q
+        k
+        v
 
     def forward_impl(self, query_states, key_states, value_states, cos, sin):  
         query_states, key_states, value_states (1, 2)を入れ替える
@@ -95,7 +98,7 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
     return q_embed, k_embed
 
 class Rms_Norm(PythonFunction):
-    def __init__(self, ctx):
+    def __init__(self, ctx, state_dict):
         #weightは重み
         #variance_epsilonはバランス
         super(Rms_Norm, self).__init__(ctx)
@@ -107,7 +110,7 @@ class Rms_Norm(PythonFunction):
         return self.weight * hidden_states.to(input_dtype)
 
 class Mlp(PythonFunction):
-    def __init__(self):
+    def __init__(self, state_dict):
         #gate, up, down, act
 
     def forward(self):
@@ -116,7 +119,7 @@ class Mlp(PythonFunction):
 
 class Decoder_layer(PythonFunction):
     #transformersのデコーダー
-    def __init__(self):
+    def __init__(self, state_dict):
         #self_attn
         #mlp
         #input_layernorm
@@ -144,7 +147,7 @@ class Decoder_layer(PythonFunction):
         return hidden_states
 
 class Rotary_emb(PythonFunction):
-    def __init__(self):
+    def __init__(self, state_dict):
         inv_freq_expanded = self.inv_freq[None, :, None].float().expand(position_ids.shape[0], -1, 1).to(x.device)
         position_ids_expanded = position_ids[:, None, :].float()
 
@@ -162,6 +165,6 @@ class Rotary_emb(PythonFunction):
         apply_rotary_pos_emb(q, k, v, cos, sin)
 
 class Im_head(PythonFunction):
-    def __init__(self):
+    def __init__(self, state_dict):
         #linear
     def forward(self, x):
