@@ -94,6 +94,7 @@ class Tinyswallow_model(PythonFunction):
 
     def __init__(self, huggingface_model):
         self.all_token_ids = []
+        self.state_dict = huggingface_model.state_dict
 
         self.config = None
         self.layer_count = huggingface_model.config_data.max_layer
@@ -107,23 +108,23 @@ class Tinyswallow_model(PythonFunction):
         print(self.tokenizer("hello world"))
 
         #embed_tokensでIDからベクトルにする
-        self.embed_tokens = nf.Embed_tokens()
+        self.embed_tokens = nf.Embed_tokens(state_dict)
 
         #rotary_embで位置情報を入れる
-        self.rotary_emb = nf.Rotary_emb()
+        self.rotary_emb = nf.Rotary_emb(state_dict)
 
         #layers 28層のデコーダ
-        self.decoder_layer = nf.Decoder_layer()
+        self.decoder_layer = nf.Decoder_layer(state_dict)
 
         #RMSnorm
-        self.rms_norm = nf.Rms_norm()
+        self.rms_norm = nf.Rms_norm(state_dict)
 
         #im_head
-        self.im_head = nf.Im_head()
+        self.im_head = nf.Im_head(state_dict)
 
     def add_text(self, text):
         token_ids = self.tokenizer(text)
-        self.all_token_ids append(token_ids)
+        self.all_token_ids.append(token_ids)
         x = self.embed_tokens(token_ids)
         x = self.rotary_emb(x)
         self.decoder_layer.generate_kv(x)
