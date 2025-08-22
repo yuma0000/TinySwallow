@@ -98,12 +98,12 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
     return q_embed, k_embed
 
 class Rms_Norm(PythonFunction):
-    def __init__(self, ctx, state_dict):
+    def __init__(self, ctx, state_dict, hidden_size, eps):
         #weightは重み
         #variance_epsilonはバランス
         super(Rms_Norm, self).__init__(ctx)
 
-    def forward_impl(self):
+    def forward_impl(self, hidden_states):
         input_dtype = hidden_states.dtype #入力
         variance = hidden_states.pow(2).mean(-1, keepdim=True)
         hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
@@ -121,14 +121,17 @@ class Decoder_layer(PythonFunction):
     #transformersのデコーダー
     def __init__(self, state_dict):
         #self_attn
+        self.self_attn = Attention()
         #mlp
+        self.mlp = Mlp()
         #input_layernorm
-        #poat_attention_layernorm
-
-    def forward(self):
+        self.input_layernorm = Rms_Norm()
+        #post_attention_layernorm
+        self.post_attention_layernorm = Rms_Norm()
+    def forward(self, hidden_states):
         residual = hidden_states
         hidden_states = self.input_layernorm(hidden_states)
-        hidden_states, _ = self.self_attn(
+        hidden_states = self.self_attn(
             hidden_states=hidden_states,
             attention_mask=attention_mask,
             position_ids=position_ids,
@@ -161,8 +164,8 @@ class Rotary_emb(PythonFunction):
         self.cos = cos.to(dtype=x.dtype)
         self.sin = sin.to(dtype=x.dtype)
 
-    def forward(self, q, k, v):
-        apply_rotary_pos_emb(q, k, v, cos, sin)
+    def forward(self, q, k):
+        apply_rotary_pos_emb(q, k, cos, sin)
 
 class Im_head(PythonFunction):
     def __init__(self, state_dict):
