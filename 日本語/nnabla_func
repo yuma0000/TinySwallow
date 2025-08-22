@@ -3,7 +3,7 @@ import nnabla as nn
 import nnabla.function as F
 from nnabla.function import PythonFunction
 
-class Attention(PythonFunction):
+class Attention():
     def __init__(self, state_dict):
         self.state_dict = state_dict
         #Q, K, V, O
@@ -11,7 +11,7 @@ class Attention(PythonFunction):
         k
         v
 
-    def forward_impl(self, query_states, key_states, value_states, cos, sin):  
+    def __call__(self, query_states, key_states, value_states, cos, sin):  
         query_states, key_states, value_states (1, 2)を入れ替える
 
         cos, sin = position_embeddings  
@@ -98,27 +98,27 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed, k_embed
 
-class Rms_Norm(PythonFunction):
+class Rms_Norm():
     def __init__(self, ctx, state_dict, hidden_size, eps):
         #weightは重み
         #variance_epsilonはバランス
         super(Rms_Norm, self).__init__(ctx)
 
-    def forward_impl(self, hidden_states):
+    def __call__(self, hidden_states):
         input_dtype = hidden_states.dtype #入力
         variance = hidden_states.pow(2).mean(-1, keepdim=True)
         hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
         return self.weight * hidden_states.to(input_dtype)
 
-class Mlp(PythonFunction):
+class Mlp():
     def __init__(self, state_dict):
         #gate, up, down, act
 
-    def forward_impl(self):
+    def __call__(self):
         down_proj = self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
         return down_proj
 
-class Decoder_layer(PythonFunction):
+class Decoder_layer():
     #transformersのデコーダー
     def __init__(self, state_dict):
         self.state_dict = state_dict
@@ -130,7 +130,8 @@ class Decoder_layer(PythonFunction):
         self.input_layernorm = Rms_Norm()
         #post_attention_layernorm
         self.post_attention_layernorm = Rms_Norm()
-    def forward_impl(self, layer_count, hidden_states):
+
+    def __call__(self, layer_count, hidden_states):
         residual = hidden_states
         hidden_states = self.input_layernorm(hidden_states)
         hidden_states = self.self_attn(
@@ -151,7 +152,7 @@ class Decoder_layer(PythonFunction):
         hidden_states = residual + hidden_states
         return hidden_states
 
-class Rotary_emb(PythonFunction):
+class Rotary_emb():
     def __init__(self, state_dict):
         inv_freq_expanded = self.inv_freq[None, :, None].float().expand(position_ids.shape[0], -1, 1).to(x.device)
         position_ids_expanded = position_ids[:, None, :].float()
@@ -166,10 +167,10 @@ class Rotary_emb(PythonFunction):
         self.cos = cos.to(dtype=x.dtype)
         self.sin = sin.to(dtype=x.dtype)
 
-    def forward_impl(self, q, k):
+    def __call__(self, q, k):
         apply_rotary_pos_emb(q, k, cos, sin)
 
-class Im_head(PythonFunction):
+class Im_head():
     def __init__(self, state_dict):
         #linear
-    def forward_impl(self, x):
+    def __call__(self, x):
