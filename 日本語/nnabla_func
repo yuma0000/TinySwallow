@@ -2,11 +2,7 @@
 import nnabla as nn
 import nnabla.function as F
 
-def Attention(self, state_dict, layer_count, query_states, key_states, value_states, cos, sin):
-    query = state[f"layers.{layer_count}".self_attn.q_proj.weight]
-    key = state[f"layers.{layer_count}".self_attn.k_proj.weight]
-    value = state[f"layers.{layer_count}".self_attn.v_proj.weight]
-
+def Attention(query, key, value, query_states, key_states, value_states, cos, sin):
     query_states, key_states, value_states (1, 2)を入れ替える
 
     cos, sin = position_embeddings  
@@ -74,13 +70,11 @@ def Attention(self, state_dict, layer_count, query_states, key_states, value_sta
 
     attn_output = out.to(origin_dtype)  
 
-    attn_weights = None  
-
     attn_output = attn_output.transpose(1, 2).contiguous()  
 
     attn_output = attn_output.reshape(*input_shape, -1).contiguous()  
     attn_output = self.o_proj(attn_output)  
-    return attn_output, attn_weights
+    return attn_output
 
 def rotate_half(x):
     x1 = x[..., : x.shape[-1] // 2]
@@ -100,27 +94,30 @@ def Rms_Norm(weight, hidden_states, eps):
     hidden_states = hidden_states * torch.rsqrt(variance + eps)
     return weight * hidden_states.to(input_dtype)
 
-class Mlp():
-    def __init__(self, state_dict):
-        #gate, up, down, act
-
-    def __call__(self):
-        down_proj = self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
-        return down_proj
+def Mlp(self, state_dict, x):
+    #gate, up, down, act
+    gate_proj = state_dict[f"gate"]
+    up_proj = state_dict[f"up"]
+    down_proj = state_dict[f"down"]
+    act_fn = state_dict[f"act"]
+    return down_proj(act_fn(gate_proj(x)) * up_proj(x))
 
 class Decoder_layer():
     #transformersのデコーダー
     def __init__(self, state_dict, max_layer):
         self.state_dict = state_dict
-        #mlp
-        self.mlp = Mlp()
 
     def __call__(self, layer_count, hidden_states):
+        query = state[f"layers.{layer_count}".self_attn.q_proj.weight]
+        key = state[f"layers.{layer_count}".self_attn.k_proj.weight]
+        value = state[f"layers.{layer_count}".self_attn.v_proj.weight]
+
         residual = hidden_states
         hidden_states = Rms_Norm(state_dict[f"input_layernorm"], hidden_states)
         hidden_states = Attention(
-            state_dict=self.state_dict,
-            layer_count=layer_count
+            query,
+            key, 
+            value,
             hidden_states=hidden_states,
             position_ids=position_ids,
             position_embeddings=position_embeddings,
@@ -129,7 +126,7 @@ class Decoder_layer():
 
         residual = hidden_states
         hidden_states = Rms_Norm(state_dict[f"post_attention_layernorm"], hidden_states)
-        hidden_states = self.mlp(hidden_states)
+        hidden_states = Mlp(state_dict, hidden_states)
         hidden_states = residual + hidden_states
         return hidden_states
 
