@@ -97,7 +97,8 @@ class Tinyswallow_model(PythonFunction):
         self.state_dict = huggingface_model.state_dict
 
         self.config = None
-        self.layer_count = huggingface_model.config_data.max_layer
+
+        self.config_data = huggingface_model.config_data
 
         self.bos_token = self.tokenizer.encoder.get("<BOS>")
         self.eos_token = self.tokenizer.encoder.get("<EOS>")
@@ -114,7 +115,7 @@ class Tinyswallow_model(PythonFunction):
         self.rotary_emb = nf.Rotary_emb(state_dict)
 
         #layers 28層のデコーダ
-        self.decoder_layer = nf.Decoder_layer(state_dict)
+        self.decoder_layer = nf.Decoder_layer(state_dict, max_layer)
 
         #RMSnorm
         self.rms_norm = nf.Rms_norm(state_dict)
@@ -142,7 +143,7 @@ class Tinyswallow_model(PythonFunction):
 
             #ここで配列に<BOS>だけのrotary_embの埋め込みが出来る
 
-            for i in range(self.layer_count): #繰り返してデコードする
+            for i in range(self.config.data.max_layer): #繰り返してデコードする
                 x = self.decoder_layer(i, x)
 
             if last_token == self.eos_token: #<eos>なら終了する
