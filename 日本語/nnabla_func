@@ -5,6 +5,7 @@ from nnabla.function import PythonFunction
 
 class Attention(PythonFunction):
     def __init__(self, state_dict):
+        self.state_dict = state_dict
         #Q, K, V, O
         q
         k
@@ -113,13 +114,14 @@ class Mlp(PythonFunction):
     def __init__(self, state_dict):
         #gate, up, down, act
 
-    def forward(self):
+    def forward_impl(self):
         down_proj = self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
         return down_proj
 
 class Decoder_layer(PythonFunction):
     #transformersのデコーダー
     def __init__(self, state_dict):
+        self.state_dict = state_dict
         #self_attn
         self.self_attn = Attention()
         #mlp
@@ -128,7 +130,7 @@ class Decoder_layer(PythonFunction):
         self.input_layernorm = Rms_Norm()
         #post_attention_layernorm
         self.post_attention_layernorm = Rms_Norm()
-    def forward(self, hidden_states):
+    def forward_impl(self, layer_count, hidden_states):
         residual = hidden_states
         hidden_states = self.input_layernorm(hidden_states)
         hidden_states = self.self_attn(
@@ -164,10 +166,10 @@ class Rotary_emb(PythonFunction):
         self.cos = cos.to(dtype=x.dtype)
         self.sin = sin.to(dtype=x.dtype)
 
-    def forward(self, q, k):
+    def forward_impl(self, q, k):
         apply_rotary_pos_emb(q, k, cos, sin)
 
 class Im_head(PythonFunction):
     def __init__(self, state_dict):
         #linear
-    def forward(self, x):
+    def forward_impl(self, x):
