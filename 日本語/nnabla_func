@@ -94,17 +94,11 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed, k_embed
 
-class Rms_Norm():
-    def __init__(self, ctx, state_dict, hidden_size, eps):
-        #weightは重み
-        #variance_epsilonはバランス
-        super(Rms_Norm, self).__init__(ctx)
-
-    def __call__(self, hidden_states):
-        input_dtype = hidden_states.dtype #入力
-        variance = hidden_states.pow(2).mean(-1, keepdim=True)
-        hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
-        return self.weight * hidden_states.to(input_dtype)
+def Rms_Norm(weight, hidden_states, eps):
+    input_dtype = hidden_states.dtype #入力
+    variance = hidden_states.pow(2).mean(-1, keepdim=True)
+    hidden_states = hidden_states * torch.rsqrt(variance + eps)
+    return weight * hidden_states.to(input_dtype)
 
 class Mlp():
     def __init__(self, state_dict):
@@ -118,32 +112,23 @@ class Decoder_layer():
     #transformersのデコーダー
     def __init__(self, state_dict, max_layer):
         self.state_dict = state_dict
-        #self_attn
-        self.self_attn = Attention()
         #mlp
         self.mlp = Mlp()
-        #input_layernorm
-        self.input_layernorm = Rms_Norm()
-        #post_attention_layernorm
-        self.post_attention_layernorm = Rms_Norm()
 
     def __call__(self, layer_count, hidden_states):
         residual = hidden_states
-        hidden_states = self.input_layernorm(hidden_states)
-        hidden_states = self.self_attn(
+        hidden_states = Rms_Norm(state_dict[f"input_layernorm"], hidden_states)
+        hidden_states = Attention(
+            state_dict=self.state_dict,
+            layer_count=layer_count
             hidden_states=hidden_states,
-            attention_mask=attention_mask,
             position_ids=position_ids,
-            past_key_value=past_key_value,
-            use_cache=use_cache,
-            cache_position=cache_position,
             position_embeddings=position_embeddings,
-            **kwargs,
         )
         hidden_states = residual + hidden_states
 
         residual = hidden_states
-        hidden_states = self.post_attention_layernorm(hidden_states)
+        hidden_states = Rms_Norm(state_dict[f"post_attention_layernorm"], hidden_states)
         hidden_states = self.mlp(hidden_states)
         hidden_states = residual + hidden_states
         return hidden_states
@@ -166,7 +151,5 @@ class Rotary_emb():
     def __call__(self, q, k):
         apply_rotary_pos_emb(q, k, cos, sin)
 
-class Im_head():
-    def __init__(self, state_dict):
-        #linear
-    def __call__(self, x):
+def Im_head(state_dict, x):
+    #linear
