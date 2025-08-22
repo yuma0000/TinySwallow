@@ -120,7 +120,7 @@ class Mlp():
 
 class Decoder_layer():
     #transformersのデコーダー
-    def __init__(self, state_dict):
+    def __init__(self, state_dict, max_layer):
         self.state_dict = state_dict
         #self_attn
         self.self_attn = Attention()
