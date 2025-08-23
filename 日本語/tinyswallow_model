@@ -111,9 +111,6 @@ class Tinyswallow_model(PythonFunction):
         #embed_tokensでIDからベクトルにする
         self.embed_tokens = nf.Embed_tokens(state_dict)
 
-        #rotary_embで位置情報を入れる
-        self.rotary_emb = nf.Rotary_emb(state_dict)
-
         #layers 28層のデコーダ
         self.decoder_layer = nf.Decoder_layer(state_dict, max_layer)
 
@@ -139,7 +136,8 @@ class Tinyswallow_model(PythonFunction):
         x = [self.bos_token] #配列に入れて<BOS>から生成する
         for _ in range(max_length):
             x = self.embed_tokens(x) #トークンの次元生成
-            x = self.rotary_emb(x) #rotary_embの埋め込み
+            cos, sin = nf.rotary_emb(x) #rotary_embの埋め込み
+            appy_rotary_emb(cos, sin)
 
             #ここで配列に<BOS>だけのrotary_embの埋め込みが出来る
 
