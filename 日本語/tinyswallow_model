@@ -6,11 +6,11 @@ import json
 import nnabla_func as nf
 from functools import lru_cache
 
-class Tokenizer():
-    def __init__(self, hfm):
+class Tokenizer(): #トークナイザーのクラス
+    def __init__(self, hfm): #huggingface_modelを読み込む
         with open(os.path.join(hfm.path, hfm.files.vocab), "r", encoding="utf-8") as f:
-            self.encoder = json.load(f)
-        self.decoder = {v: k for k, v in self.encoder.items()}
+            self.encoder = json.load(f) #トークナイズのファイルを読み込む
+        self.decoder = {v: k for k, v in self.encoder.items()} #入れ替えデコーダとする
         self.byte_encoder = self.bytes_to_unicode()
         self.byte_decoder = {v: k for k, v in self.byte_encoder.items()}
         bpe_merges = []
@@ -44,7 +44,7 @@ class Tokenizer():
         cs = [chr(n) for n in cs]
         return dict(zip(bs, cs))
 
-    def get_pairs(self, word):
+    def get_pairs(self, word): #テキストの組み合わせを探す
         pairs = set()
         prev_char = word[0]
         for char in word[1:]:
@@ -52,7 +52,7 @@ class Tokenizer():
             prev_char = char
         return pairs
 
-    def bpe(self, token):
+    def bpe(self, token): #過去からのデータから処理の効率化
         if token in self.cache:
             return self.cache[token]
         word = tuple(token)
@@ -90,7 +90,7 @@ class Tokenizer():
         self.cache[token] = word
         return word
 
-class Tinyswallow_model(PythonFunction):
+class Tinyswallow_model(): #tinyswallow_modelのクラス
 
     def __init__(self, huggingface_model):
         self.all_token_ids = []
