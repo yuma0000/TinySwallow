@@ -125,7 +125,7 @@ def decoder_layer(state_dict, layer_count, hidden_states):
     hidden_states = residual + hidden_states
     return hidden_states
 
-def rotary_emb(x, q, k):
+def rotary_emb(x):
     inv_freq_expanded = self.inv_freq[None, :, None].float().expand(position_ids.shape[0], -1, 1).to(x.device)
     position_ids_expanded = position_ids[:, None, :].float()
 
@@ -136,9 +136,9 @@ def rotary_emb(x, q, k):
         cos = emb.cos() * self.attention_scaling
         sin = emb.sin() * self.attention_scaling
 
-    self.cos = cos.to(dtype=x.dtype)
-    self.sin = sin.to(dtype=x.dtype)
-    return apply_rotary_pos_emb(q, k, cos, sin)
+    cos = cos.to(dtype=x.dtype)
+    sin = sin.to(dtype=x.dtype)
+    return cos, sin
 
 def Im_head(state_dict, x):
     #linear
