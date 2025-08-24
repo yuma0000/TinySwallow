@@ -2,10 +2,7 @@
 import nnabla as nn
 import nnabla.function as F
 
-def attention(query, key, value, query_states, key_states, value_states, cos, sin):
-    query_states, key_states, value_states (1, 2)を入れ替える
-
-    cos, sin = position_embeddings  
+def attention(query_states, key_states, value_states, cos, sin):
     query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)  
 
     if past_key_value is not None:  
@@ -107,14 +104,16 @@ def decoder_layer(state_dict, layer_count, hidden_states, cos, sin):
     key = state_dict[f"layers.{layer_count}".self_attn.k_proj.weight]
     value = state_dict[f"layers.{layer_count}".self_attn.v_proj.weight]
 
-    query_state = query @ hidden_states
-    key_state = key @ hidden_states
-    value_state = value @ hidden_states
+    query_state = query @ hidden_states + state_dict[f"model.layers{layer_count}.self_attn.q_proj.bias"]
+    key_state = key @ hidden_states + state_dict[f"model.layers{layer_count}.self_attn.k_proj.bias"]
+    value_state = value @ hidden_states + state_dict[f"model.layers{layer_count}.self_attn.v_proj.bias"]
+
+    #query, key 1,2入れ替え
 
     query_state, key_state = apply_rotary_pos_emb(query_state, key_state, cos, sin)
 
     residual = hidden_states
-    hidden_states = rms_norm(state_dict[f"input_layernorm"], hidden_states)
+    hidden_states = rms_norm(state_dict[f"model.layers.{layer_count}.input_layernorm.weight"], hidden_states)
     hidden_states = attention(
         query_state,
         key_state, 
@@ -126,7 +125,7 @@ def decoder_layer(state_dict, layer_count, hidden_states, cos, sin):
     hidden_states = residual + hidden_states
 
     residual = hidden_states
-    hidden_states = Rms_Norm(state_dict[f"post_attention_layernorm"], hidden_states)
+    hidden_states = Rms_Norm(state_dict[f"model.layers.{layer_count}.post_attention_layernorm.weight"], hidden_states)
     hidden_states = mlp(state_dict, hidden_states)
     hidden_states = residual + hidden_states
     return hidden_states
@@ -148,3 +147,6 @@ def rotary_emb(x):
 
 def Im_head(state_dict, x):
     #linear
+    weight = state_dict["im_head.weight"]
+    bias = state_dict["im_head.bias"]
+    F.affine(x, weight, bias)
