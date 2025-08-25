@@ -111,9 +111,6 @@ class Tinyswallow_model(): #tinyswallow_modelのクラス
         #embed_tokensでIDからベクトルにする
         self.embed_tokens = nf.Embed_tokens(state_dict)
 
-        #layers 28層のデコーダ
-        self.decoder_layer = nf.Decoder_layer(state_dict, max_layer)
-
         #RMSnorm
         self.rms_norm = nf.Rms_norm(state_dict)
 
@@ -136,9 +133,8 @@ class Tinyswallow_model(): #tinyswallow_modelのクラス
         x = [self.bos_token] #配列に入れて<BOS>から生成する
         for _ in range(max_length):
             x = self.embed_tokens(x) #トークンの次元生成
-            self.decoder_layer.cos, self.decoder_layer.sin = nf.rotary_emb(x) #rotary_embの埋め込み
 
-            #ここで配列に<BOS>だけのrotary_embの埋め込みが出来る
+            #ここで配列に<BOS>だけの埋め込みが出来る
 
             #デコーダーで繰り返す28層
             x = self.decoder_layer(self.config_data.max_layer, i, x)
