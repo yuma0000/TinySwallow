@@ -140,8 +140,8 @@ class Tinyswallow_model(): #tinyswallow_modelのクラス
 
             #ここで配列に<BOS>だけのrotary_embの埋め込みが出来る
 
-            for i in range(self.config_data.max_layer): #繰り返してデコードする
-                x = self.decoder_layer(i, x)
+            #デコーダーで繰り返す28層
+            x = self.decoder_layer(self.config_data.max_layer, i, x)
 
             if last_token == self.eos_token: #<eos>なら終了する
                 break
