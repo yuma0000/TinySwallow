@@ -114,22 +114,27 @@ def mlp(self, state_dict, x):
     act_fn = state_dict[f"act"]
     return down_proj(act_fn(gate_proj(x)) * up_proj(x))
 
-def decoder_layer(state_dict, layer_count, hidden_states, cos, sin):
-    residual = hidden_states
-    hidden_states = rms_norm(state_dict[f"model.layers.{layer_count}.input_layernorm.weight"], hidden_states)
-    hidden_states = attention(
-        state_dict=state_dict,
-        layer_count,
-        hidden_states=hidden_states,
-        cos,
-        sin
-    )
-    hidden_states = residual + hidden_states
+def decoder_layer(state_dict, max_layer, layer_count, hidden_states):
+    cos, sin = rotary_emb(hidden_states) #rotary_embの埋め込み
 
-    residual = hidden_states
-    hidden_states = Rms_Norm(state_dict[f"model.layers.{layer_count}.post_attention_layernorm.weight"], hidden_states)
-    hidden_states = mlp(state_dict, hidden_states)
-    hidden_states = residual + hidden_states
+    if max_layer < layer_count:
+        return None
+    for i in layer_count:
+        residual = hidden_states
+        hidden_states = rms_norm(state_dict[f"model.layers.{layer_count}.input_layernorm.weight"], hidden_states)
+        hidden_states = attention(
+            state_dict=state_dict,
+            layer_count,
+            hidden_states=hidden_states,
+            cos,
+            sin
+        )
+        hidden_states = residual + hidden_states
+
+        residual = hidden_states
+        hidden_states = Rms_Norm(state_dict[f"model.layers.{layer_count}.post_attention_layernorm.weight"], hidden_states)
+        hidden_states = mlp(state_dict, hidden_states)
+        hidden_states = residual + hidden_states
     return hidden_states
 
 def rotary_emb(x):
