@@ -2,7 +2,18 @@
 import nnabla as nn
 import nnabla.function as F
 
-def attention(query_states, key_states, value_states, cos, sin):
+def attention(state_dict, layer_count, cos, sin):
+    input_shape = hidden_states.shape[:-1]
+    hidden_shape = (*input_shape, -1, self.head_dim)
+
+    query = state_dict[f"layers.{layer_count}".self_attn.q_proj.weight]
+    key = state_dict[f"layers.{layer_count}".self_attn.k_proj.weight]
+    value = state_dict[f"layers.{layer_count}".self_attn.v_proj.weight]
+
+    query_state = query @ hidden_states + state_dict[f"model.layers{layer_count}.self_attn.q_proj.bias"]
+    key_state = key @ hidden_states + state_dict[f"model.layers{layer_count}.self_attn.k_proj.bias"]
+    value_state = value @ hidden_states + state_dict[f"model.layers{layer_count}.self_attn.v_proj.bias"]
+
     query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)  
 
     if past_key_value is not None:  
@@ -100,18 +111,6 @@ def mlp(self, state_dict, x):
     return down_proj(act_fn(gate_proj(x)) * up_proj(x))
 
 def decoder_layer(state_dict, layer_count, hidden_states, cos, sin):
-    query = state_dict[f"layers.{layer_count}".self_attn.q_proj.weight]
-    key = state_dict[f"layers.{layer_count}".self_attn.k_proj.weight]
-    value = state_dict[f"layers.{layer_count}".self_attn.v_proj.weight]
-
-    query_state = query @ hidden_states + state_dict[f"model.layers{layer_count}.self_attn.q_proj.bias"]
-    key_state = key @ hidden_states + state_dict[f"model.layers{layer_count}.self_attn.k_proj.bias"]
-    value_state = value @ hidden_states + state_dict[f"model.layers{layer_count}.self_attn.v_proj.bias"]
-
-    #query, key 1,2入れ替え
-
-    query_state, key_state = apply_rotary_pos_emb(query_state, key_state, cos, sin)
-
     residual = hidden_states
     hidden_states = rms_norm(state_dict[f"model.layers.{layer_count}.input_layernorm.weight"], hidden_states)
     hidden_states = attention(
