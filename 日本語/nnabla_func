@@ -14,9 +14,9 @@ def attention(state_dict, layer_count, hidden_states, cos, sin):
     key_state = F.affine(hidden_states, key, state_dict[f"model.layers{layer_count}.self_attn.k_proj.bias"])
     value_state = F.affine(hidden_states, value, state_dict[f"model.layers{layer_count}.self_attn.v_proj.bias"])
 
-    query_state = query_state.transpose(1, 2)
-    key_state = key_state.transpose(1, 2)
-    value_state = value_state.transpose(1, 2)
+    query_state = F.transpose(query_state, (0, 2, 1, 3))
+    key_state = F.transpose(key_state, (0, 2, 1, 3))
+    value_state = F.transpose(value_state, (0, 2, 1, 3))
 
     query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)  
 
@@ -60,9 +60,9 @@ def attention(state_dict, layer_count, hidden_states, cos, sin):
     if scale is None:  
         scale = 1.0 / (key.size(-1) ** 0.5)  
 
-    attn_weights = torch.matmul(query, key.transpose(-2, -1)) * scale  
+    attn_weights = F.batch_matmul(query, key, transpose_a=False, transpose_b=True) * scale  
 
-    if is_causal:  
+    if is_causal:
         q_len, k_len = attn_weights.size(-2), attn_weights.size(-1)  
         causal_mask = torch.tril(torch.ones(q_len, k_len, device=attn_weights.device, dtype=torch.bool))  
         attn_weights = attn_weights.masked_fill(~causal_mask.view(1, 1, q_len, k_len), float('-inf'))  
@@ -110,7 +110,7 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
 def rms_norm(weight, hidden_states, eps):
     input_dtype = hidden_states.dtype #入力
     variance = hidden_states.pow(2).mean(-1, keepdim=True)
-    hidden_states = hidden_states * torch.rsqrt(variance + eps)
+    hidden_states = hidden_states * F.rsqrt(variance + eps)
     return weight * hidden_states.to(input_dtype)
 
 def mlp(self, state_dict, x):
