@@ -97,6 +97,7 @@ class Tinyswallow_model(): #tinyswallow_modelのクラス
         self.state_dict = huggingface_model.state_dict
 
         self.config = None
+        self.cache = None
 
         self.config_data = huggingface_model.config_data
 
