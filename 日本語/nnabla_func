@@ -117,9 +117,9 @@ def mlp(self, state_dict, x):
     down_b = state_dict[f"gate"]
 
     gate = F.affine(x, gate_w, gate_b)
-    act = act(gate)
+    act = gate * F.softmax(gate)
     up = F.affine(x, up_w, up_b)
-    act_up = act * up
+    act_up = F.mul2(act, up)
     down = F.affine(act_up, down_w, down_b)
     ruturn down
 
