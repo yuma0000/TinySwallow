@@ -13,3 +13,7 @@ class cache:
 
    #データを検索し保存する
    def save():
+
+   def add_kv:
+
+   def delete_kv:
