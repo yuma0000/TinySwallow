@@ -108,11 +108,22 @@ def rms_norm(weight, hidden_states, eps):
 
 def mlp(self, state_dict, x):
     #gate, up, down, act
-    gate_proj = state_dict[f"gate"]
-    up_proj = state_dict[f"up"]
-    down_proj = state_dict[f"down"]
-    act_fn = state_dict[f"act"]
-    return down_proj(act_fn(gate_proj(x)) * up_proj(x))
+    gate_w = state_dict[f"gate"]
+    up_w = state_dict[f"up"]
+    down_w = state_dict[f"down"]
+
+    gate_b = state_dict[f"gate"]
+    up_b = state_dict[f"gate"]
+    down_b = state_dict[f"gate"]
+
+    gate = F.affine(x, gate_w, gate_b)
+    act = act(gate)
+    up = F.affine(x, up_w, up_b)
+    act_up = act * up
+    down = F.affine(act_up, down_w, down_b)
+    ruturn down
+
+    #return down_proj(act_fn(gate_proj(x)) * up_proj(x))
 
 def decoder_layer(state_dict, max_layer, layer_count, hidden_states):
     cos, sin = rotary_emb(hidden_states) #rotary_embの埋め込み
