@@ -88,10 +88,17 @@ def attention(state_dict, layer_count, hidden_states, cos, sin):
     attn_output = self.o_proj(attn_output)  
     return attn_output
 
+def _slice_last(x, start, stop):
+    starts = (0,) * (x.ndim - 1) + (start,)
+    stops = (0,) * (x.ndim - 1) + (stop,)
+    return F.slice(x, start=starts, stop=stops)
+
 def rotate_half(x):
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    hd = x.shape[-1]
+    half = hd // 2
+    x1 = _slice_last(x, 0, half)
+    x2 = _slice_last(x, half, hd)
+    return F.concatenate(F.neg(x2), x1, axis=-1)
 
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
     cos = cos.unsqueeze(unsqueeze_dim)
@@ -143,7 +150,7 @@ def decoder_layer(state_dict, max_layer, layer_count, hidden_states):
         hidden_states = residual + hidden_states
 
         residual = hidden_states
-        hidden_states = Rms_Norm(state_dict[f"model.layers.{layer_count}.post_attention_layernorm.weight"], hidden_states)
+        hidden_states = rms_norm(state_dict[f"model.layers.{layer_count}.post_attention_layernorm.weight"], hidden_states)
         hidden_states = mlp(state_dict, hidden_states)
         hidden_states = residual + hidden_states
     return hidden_states
@@ -167,4 +174,4 @@ def Im_head(state_dict, x):
     #linear
     weight = state_dict["im_head.weight"]
     bias = state_dict["im_head.bias"]
-    F.affine(x, weight, bias)
+    return F.affine(x, weight, bias)
