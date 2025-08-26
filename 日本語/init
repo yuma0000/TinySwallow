@@ -9,6 +9,7 @@
 import "huggingface_model"
 import "tinyswallow_model"
 import "config"
+import "cache"
 
 メイン関数の作成
   [モデルのディレクトリー]変数を作成し、ここは後で代入する
