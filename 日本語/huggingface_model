@@ -3,7 +3,7 @@
 以下にhuggingface_modelクラスを作成
 
 import json
-from safetensors.torch import load_file
+from safetensors.numpy import load_file
 
 class Huggingface_model:
 
