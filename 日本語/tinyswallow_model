@@ -121,7 +121,7 @@ class Tinyswallow_model(): #tinyswallow_modelのクラス
         cache_data.remove_kv(c)
 
     def generate(self, max_length: int = 1):
-        tokens_ids = [self.bos_token] #配列に入れて<BOS>に続ける
+        token_ids = [self.bos_token] #配列に入れて<BOS>に続ける
         x = [self.bos_token] #配列に入れて<BOS>から生成する
         for _ in range(max_length):
             x = nf.embed_tokens(x) #トークンの次元生成
@@ -129,7 +129,7 @@ class Tinyswallow_model(): #tinyswallow_modelのクラス
             #ここで配列に<BOS>だけの埋め込みが出来る
 
             #デコーダーで繰り返す28層
-            x = self.decoder_layer(self.config_data.max_layer, i, x)
+            x = self.decoder_layer(self.config_data.max_layer, x)
 
             if last_token == self.eos_token: #<eos>なら終了する
                 break
