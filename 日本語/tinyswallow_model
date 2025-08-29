@@ -129,12 +129,12 @@ class Tinyswallow_model(): #tinyswallow_modelのクラス
             #ここで配列に<BOS>だけの埋め込みが出来る
 
             #デコーダーで繰り返す28層
-            x = self.decoder_layer(self.config_data.max_layer, x)
+            x = nf.decoder_layer(self.config_data.max_layer, x)
 
             if last_token == self.eos_token: #<eos>なら終了する
                 break
 
-            x = nf.rms_norm(x)
+            x = nf.rms_norm(state_dict[f"model.norm.weight"], x)
             logits = nf.im_head(x)
 
             last_token = int(logits[0].argmax()) #複数から一番確率が高いのを選択する
