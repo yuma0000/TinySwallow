@@ -17,8 +17,8 @@ class cache:
     def save():
 
     def add_kv(k, v):
-        self.k = F.concatenate(self.k, k)
-        self.v = F.concatenate(self.v, v)
+        self.k = F.concatenate(self.k, k, axis=2)
+        self.v = F.concatenate(self.v, v, axis=2)
         return self.k, self.v
 
     def delete_kv:
