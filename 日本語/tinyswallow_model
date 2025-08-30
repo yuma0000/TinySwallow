@@ -113,16 +113,16 @@ class Tinyswallow_model(): #tinyswallow_modelのクラス
     def add_text(self, text):
         token_ids = self.tokenizer(text)
         self.all_token_ids.append(token_ids)
-        generate_kv(token_ids)
+        self.generate_kv(token_ids)
 
     def remove_text(self, c: int = 1):
         self.all_token_ids = self.all_token_ids[:-c]
-        cache_data.remove_kv(c)
+        self.cache.remove_kv(c)
 
-    def generate_kv(token_ids):
+    def generate_kv(self, token_ids):
         for x in token_ids:
-            x = nf.embed_tokens(x)
-            x = nf.decoder_layer(self.config_data.max_layer, x)
+            x = nf.embed_tokens(x, self.state_dict)
+            x = nf.decoder_layer(self.config_data.max_layer, x, self.state_dict)
 
     def generate(self, max_length: int = 1):
         token_ids = [self.bos_token] #配列に入れて<BOS>に続ける
@@ -142,7 +142,7 @@ class Tinyswallow_model(): #tinyswallow_modelのクラス
             token_ids.append(last_token) #トークンの追加
 
             if last_token == self.eos_token: #<eos>なら終了する
-                generate_kv(x)
+                self.generate_kv(x)
                 break
 
             x = [last_token] #次のトークンとして使う
