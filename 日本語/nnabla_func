@@ -51,7 +51,7 @@ def attention(
 
     query_state, key_state = apply_rotary_pos_emb(query_state, key_state, cos, sin)
 
-    cache.kv_states.add(key_state, value_state)
+    key_state, value_state = cache.kv_states.add(key_state, value_state)
 
     num_repeat = query_state.shape[1] // key_state.shape[1]
     key_state = repeat_kv(key_state, num_repeat)
