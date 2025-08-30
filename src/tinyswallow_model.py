@@ -101,25 +101,30 @@ class Tinyswallow_model():
         token_ids = self.tokenizer(text)
         self.all_token_ids.append(token_ids)
         x = nf.embed_tokens(token_ids)
-        x = nf.rotary_emb(x)
-        self.decoder_layer.generate_kv(x)
+        self.generate_kv(x)
 
     def remove_text(self, c: int = 1):
         self.all_token_ids = self.all_token_ids[:-c]
         cache_data.remove_kv(c)
 
+    def generate_kv(self, token_ids):
+        for x in token_ids:
+            x = nf.embed_tokens(x, self.state_dict)
+            x = nf.decoder_layer(self.config_data.max_layer, x, self.state_dict)
+    
     def generate(self, max_length: int = 1):
         token_ids = [self.bos_token]
         x = [self.bos_token]
         for _ in range(max_length):
             x = nf.embed_tokens(x)
             x = nf.decoder_layer(self.config_data.max_layer, x)
-            if last_token == self.eos_token:
-                break
             x = nf.rms_norm(state_dict[f"model.norm.weight"], x)
             logits = nf.im_head(x)
             last_token = int(logits[0].argmax())
             token_ids.append(last_token)
+            if last_token == self.eos_token:
+                self.generate_kv(last_token)
+                break
             x = [last_token]
         self.all_token_ids.append(token_ids)
         tokens = [self.tokenizer.decoder[t] for t in token_ids]
