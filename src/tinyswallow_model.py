@@ -105,7 +105,7 @@ class Tinyswallow_model():
 
     def remove_text(self, c: int = 1):
         self.all_token_ids = self.all_token_ids[:-c]
-        cache_data.remove_kv(c)
+        self.cache.remove_kv(c)
 
     def generate_kv(self, token_ids):
         for x in token_ids:
