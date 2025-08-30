@@ -23,8 +23,7 @@ def attention(
     hidden_states,
     head_dim,
     cache,
-    attn_mask,
-    attention_mask,
+    attention_mask=None,
     scale,
     dropout_p,
     cos,
@@ -82,9 +81,7 @@ def attention(
     value_state = maybe_upcast(value_state)  
 
     if query_state.shape[1] != key_state.shape[1]:
-        repeat_factor = query_state.shape[1] // key_state.shape[1]
-        key_state = repeat_kv(key_state, repeat_factor)
-        value_state = repeat_kv(value_state, repeat_factor)
+        print("num_repeat not query to key")
 
     if scale is None:
         scale = 1.0 / (key_state.shape[-1] ** 0.5)
@@ -100,6 +97,8 @@ def attention(
     mask = causal_mask(q_len, k_len)
     mask = F.reshape(mask, (1,1,q_len,k_len))
     attn_weights = F.where(mask, attn_weights, F.constant(-1e9, attn_weights.shape))
+
+    attn_mask = attention_mask
 
     if attn_mask is not None:
         if attn_mask.dtype == np.bool_:
@@ -162,7 +161,7 @@ def decoder_layer(state_dict, max_layer, position_ids, hidden_states):
 
     for i in range(max_layer):
         residual = hidden_states
-        hidden_states = rms_norm(state_dict[f"model.layers.{layer_count}.input_layernorm.weight"], hidden_states)
+        hidden_states = rms_norm(state_dict[f"model.layers.{i}.input_layernorm.weight"], hidden_states)
         hidden_states = attention(
             state_dict=state_dict,
             layer_count=i,
@@ -173,7 +172,7 @@ def decoder_layer(state_dict, max_layer, position_ids, hidden_states):
         hidden_states = residual + hidden_states
 
         residual = hidden_states
-        hidden_states = rms_norm(state_dict[f"model.layers.{layer_count}.post_attention_layernorm.weight"], hidden_states)
+        hidden_states = rms_norm(state_dict[f"model.layers.{i}.post_attention_layernorm.weight"], hidden_states)
         hidden_states = mlp(state_dict, i, hidden_states)
         hidden_states = residual + hidden_states
     return hidden_states
