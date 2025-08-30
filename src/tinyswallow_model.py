@@ -108,16 +108,16 @@ class Tinyswallow_model():
     def generate_kv(self, token_ids):
         for x in token_ids:
             x = nf.embed_tokens(x, self.state_dict)
-            nf.decoder_layer(self.config_data.max_layer, x, self.state_dict)
+            nf.decoder_layer(self.state_dict, self.config_data.max_layer, position_ids=None, x, attention_mask=None)
     
     def generate(self, max_length: int = 1):
         token_ids = [self.bos_token]
         x = [self.bos_token]
         for _ in range(max_length):
             x = nf.embed_tokens(x)
-            x = nf.decoder_layer(self.config_data.max_layer, x)
+            x = nf.decoder_layer(self.state_dict, self.config_data.max_layer, position_ids=None, x, attention_mask=None)
             x = nf.rms_norm(state_dict[f"model.norm.weight"], x)
-            logits = nf.im_head(x)
+            logits = nf.lm_head(x)
             last_token = int(logits[0].argmax())
             token_ids.append(last_token)
             if last_token == self.eos_token:
