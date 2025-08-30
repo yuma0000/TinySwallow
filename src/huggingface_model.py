@@ -1,8 +1,7 @@
 import json
-from safetensors.torch import load_file
+from safetensors.numpy import load_file
 
 class Huggingface_model:
-
     def load_config(self, path: str) -> None:
         with open(path, "r", encoding = "utf-8") as f:
             self.config_data.update(json.load(f))
@@ -19,7 +18,6 @@ class Huggingface_model:
 
     def __init__(self, path: str):
         self.path = path
-
         self.config_data = {
             "_name_or_path": None,
             "architectures": None,
@@ -46,24 +44,15 @@ class Huggingface_model:
             "use_sliding_window": None,
             "vocab_size": None
         }
-
         self.files = {
             "vocab": "vocab.json",
             "merges": "merges.txt"
         }
-
         self.state_dict = None
-
-        #configをロード
         self.load_config(path)
-
-        #checkを行う
         che = self.check()
-
         if che is True:
-            #構造と重みの読み込みをする
             self.model_structure(path)
         else:
             print("jsonが有効ではありませんでした。")
-
         print("処理が終了致しました。")
