@@ -23,7 +23,7 @@ def attention(
     hidden_states,
     head_dim,
     cache,
-    attention_mask=None,
+    attention_mask,
     scale,
     dropout_p,
     cos,
@@ -80,9 +80,6 @@ def attention(
     key_state = maybe_upcast(key_state)  
     value_state = maybe_upcast(value_state)  
 
-    if query_state.shape[1] != key_state.shape[1]:
-        print("num_repeat not query to key")
-
     if scale is None:
         scale = 1.0 / (key_state.shape[-1] ** 0.5)
 
@@ -132,7 +129,7 @@ def rotate_half(x):
 
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, expand_dim=1):
     cos = F.expand_dims(cos, axis=expand_dim)
-    sin = F.expand_dims(cos, axis=expand_dim)
+    sin = F.expand_dims(sin, axis=expand_dim)
     q_embed = (q * cos) + (rotate_half(q) * sin)
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed, k_embed
@@ -166,6 +163,11 @@ def decoder_layer(state_dict, max_layer, position_ids, hidden_states):
             state_dict=state_dict,
             layer_count=i,
             hidden_states=hidden_states,
+            head_dim,
+            cache,
+            attention_mask,
+            scale,
+            dropout_p,
             cos,
             sin
         )
