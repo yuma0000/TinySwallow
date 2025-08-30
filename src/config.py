@@ -1,0 +1,8 @@
+class config:
+    def __init__(self, dir):
+        lf = load_file(self, dir)
+        return json_obj(lf)
+
+    def load_file(self, dir):
+
+    def json_obj(lf):
