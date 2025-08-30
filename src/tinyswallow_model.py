@@ -91,17 +91,15 @@ class Tinyswallow_model():
         self.config = None
         self.cache = None
         self.config_data = huggingface_model.config_data
+        self.tokenizer = Tokenizer(huggingface_model)
         self.bos_token = self.tokenizer.encoder.get("<BOS>")
         self.eos_token = self.tokenizer.encoder.get("<EOS>")
-
-        self.tokenizer = Tokenizer(huggingface_model)
         print(self.tokenizer("hello world"))
 
     def add_text(self, text):
         token_ids = self.tokenizer(text)
         self.all_token_ids.append(token_ids)
-        x = nf.embed_tokens(token_ids)
-        self.generate_kv(x)
+        self.generate_kv(token_ids)
 
     def remove_text(self, c: int = 1):
         self.all_token_ids = self.all_token_ids[:-c]
@@ -110,7 +108,7 @@ class Tinyswallow_model():
     def generate_kv(self, token_ids):
         for x in token_ids:
             x = nf.embed_tokens(x, self.state_dict)
-            x = nf.decoder_layer(self.config_data.max_layer, x, self.state_dict)
+            nf.decoder_layer(self.config_data.max_layer, x, self.state_dict)
     
     def generate(self, max_length: int = 1):
         token_ids = [self.bos_token]
