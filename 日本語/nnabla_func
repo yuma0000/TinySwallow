@@ -1,4 +1,6 @@
 これはnnabla_funcクラスです
+
+import numpy as np
 import nnabla as nn
 import nnabla.function as F
 
@@ -7,6 +9,8 @@ def embed_tokens(x, state_dict):
     return F.embed(x, weight)
 
 def repeat_kv(x, num_repeat):
+    if num_repeat == 1:
+        return x
     B, H, L, D = x.shape
     x = F.reshape(x, (B, H, 1, L, D))
     x = F.repeat(x, repeats=num_repeat, axis=2)
@@ -21,7 +25,6 @@ def attention(
     cache,
     attn_mask,
     attention_mask,
-    ls_causal,
     scale,
     dropout_p,
     cos,
@@ -67,9 +70,6 @@ def attention(
             step=(1, 1, 1, 1)
         )
 
-    if is_causal is None:  
-        is_causal = query.shape[2] > 1 and attention_mask is None
-
     origin_dtype = query_state.dtype
 
     def maybe_upcast(x):
@@ -95,11 +95,11 @@ def attention(
         mask = np.tril(np.ones((q_len, k_len), dtype=np.bool_))
         return nn.Variable.from_numpy_array(mask)
 
-    if is_causal:
-        q_len, k_len = attn_weights.shape[-2], attn_weights.shape[-1]
-        mask = causal_mask(q_len, k_len)
-        mask = F.reshape(mask, (1,1,q_len,k_len))
-        attn_weights = F.where(mask, attn_weights, F.constant(-1e9, attn_weights.shape))
+    #is_causal
+    q_len, k_len = attn_weights.shape[-2], attn_weights.shape[-1]
+    mask = causal_mask(q_len, k_len)
+    mask = F.reshape(mask, (1,1,q_len,k_len))
+    attn_weights = F.where(mask, attn_weights, F.constant(-1e9, attn_weights.shape))
 
     if attn_mask is not None:
         if attn_mask.dtype == np.bool_:
@@ -131,14 +131,14 @@ def rotate_half(x):
     x2 = _slice_last(x, half, hd)
     return F.concatenate(F.neg(x2), x1, axis=-1)
 
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
-    cos = cos.unsqueeze(unsqueeze_dim)
-    sin = sin.unsqueeze(unsqueeze_dim)
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, expand_dim=1):
+    cos = F.expand_dims(cos, axis=expand_dim)
+    sin = F.expand_dims(cos, axis=expand_dim)
     q_embed = (q * cos) + (rotate_half(q) * sin)
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed, k_embed
 
-def rms_norm(state_dict, weight, hidden_states, eps):
+def rms_norm(weight, hidden_states, eps):
     input_dtype = hidden_states.dtype #入力
     variance = hidden_states.pow(2).mean(-1, keepdim=True)
     hidden_states = hidden_states * F.rsqrt(variance + eps)
@@ -151,7 +151,7 @@ def mlp(state_dict, layer_count, x):
     down_w = state_dict[f"model.layers.{layer_count}.mlp.down_proj.weight"]
 
     gate = F.affine(x, gate_w)
-    act = gate * F.silu(gate)
+    act = F.mul2(gate, F.sigmoid(gate))
     up = F.affine(x, up_w)
     act_up = F.mul2(act, up)
     down = F.affine(act_up, down_w)
